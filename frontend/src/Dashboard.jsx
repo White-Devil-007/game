@@ -77,6 +77,15 @@ const CyberTerminalStyles = () => (
     }
     .prompt-textarea:focus { border-color: rgba(0,210,255,0.7); box-shadow: 0 0 12px rgba(0,210,255,0.15); }
     .prompt-textarea::placeholder { color: rgba(100,180,200,0.4); }
+    .vertical-slider {
+      accent-color: #00D2FF;
+      width: 8px;
+      height: 220px;
+      -webkit-appearance: slider-vertical;
+      writing-mode: bt-lr;
+      background: transparent;
+      margin: 0;
+    }
   `}</style>
 );
 
@@ -292,6 +301,10 @@ export default function Dashboard() {
   const [customRules, setCustomRules] = useState(['IF [Resources Drop Below 20%] ➔ THEN [Activate Cannibalism Instinct]']);
 
   const [timeline, setTimeline] = useState(defaultTimeline);
+  const [selectedEraIndex, setSelectedEraIndex] = useState(0);
+  const [eraDetail, setEraDetail] = useState({year:'2030 AD', title:'Origin of the Civilization', summary:'Move the era slider to generate a Gemini-powered history milestone based on the current civilization parameters.'});
+  const [eraLoading, setEraLoading] = useState(false);
+  const eraCount = 4;
   const [report,   setReport]   = useState(defaultReport);
   const [badges,   setBadges]   = useState(defaultBadges);
 
@@ -314,6 +327,48 @@ export default function Dashboard() {
     };
     check();
   },[]);
+
+  useEffect(()=>{setSelectedEraIndex(0);},[timeline]);
+
+  useEffect(()=>{
+    const fetchEra = async () => {
+      setEraLoading(true);
+      try {
+        const payload = {
+          morality:+morality,
+          empathy:+empathy,
+          curiosity:+curiosity,
+          greed:+greed,
+          aggression:+aggression,
+          custom_rules: customRules,
+          prompt_config: inputMode==='prompt' ? promptConfig : '',
+          era_index: selectedEraIndex,
+          total_eras: eraCount
+        };
+        const r = await fetch('http://localhost:8000/api/era', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload)
+        });
+        if(!r.ok) throw new Error('Era generation failed');
+        const d = await r.json();
+        setEraDetail({
+          year:d.year || eraDetail.year,
+          title:d.title || eraDetail.title,
+          summary:d.summary || eraDetail.summary
+        });
+      } catch {
+        setEraDetail({
+          year:'2030 AD',
+          title:'Era generation unavailable',
+          summary:'Gemini could not generate the era summary. Check your API configuration or try again.'
+        });
+      } finally {
+        setEraLoading(false);
+      }
+    };
+    fetchEra();
+  },[selectedEraIndex,inputMode,promptConfig,morality,empathy,curiosity,greed,aggression,customRules]);
 
   useEffect(()=>{chatEndRef.current?.scrollIntoView({behavior:'smooth'});},[chatHistory,isLoading]);
 
@@ -638,19 +693,36 @@ export default function Dashboard() {
                 <span className="text-[10px] text-cyan-400 font-bold animate-pulse">{loadingStage}</span>
               </div>
             ):(
-              <div className="relative border-l border-cyan-500/30 pl-4 ml-2 flex flex-col gap-5 py-1">
-                {timeline.map((era,i)=>(
-                  <div key={i} className="relative group">
-                    <span className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 bg-[#00F5A0] rounded-full border border-black shadow-[0_0_8px_#00F5A0] group-hover:scale-125 transition"/>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[9px] font-black bg-cyan-950 px-2 py-0.5 border border-[#00D2FF]/30 text-[#00D2FF] rounded">{era.year}</span>
-                        <h4 className="text-[10px] font-bold text-[#00F5A0] uppercase">{era.title}</h4>
-                      </div>
-                      <p className="text-[10px] text-gray-300 leading-relaxed">{era.summary}</p>
+              <div className="grid grid-cols-[auto_1fr] gap-4 items-start">
+                <div className="flex flex-col items-center gap-3 text-[9px] text-gray-400">
+                  <span className="uppercase tracking-widest">Start: Origin</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={eraCount - 1}
+                    value={selectedEraIndex}
+                    onChange={e=>setSelectedEraIndex(Number(e.target.value))}
+                    className="vertical-slider"
+                  />
+                  <span className="uppercase tracking-widest">Survival Horizon: Approximate End</span>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[9px] uppercase tracking-widest text-cyan-300">Era {selectedEraIndex + 1} of {eraCount}</span>
+                    <span className="text-[9px] text-gray-500">Slide to generate each period</span>
+                  </div>
+                  <div className="border border-cyan-500/20 rounded p-3 bg-[#09101a]">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-[#00D2FF]">{eraDetail.year}</span>
+                      <h4 className="text-[11px] font-bold text-[#00F5A0] uppercase">{eraDetail.title}</h4>
+                      {eraLoading ? (
+                        <p className="text-[10px] text-gray-400 leading-relaxed">Generating era summary with Gemini AI...</p>
+                      ) : (
+                        <p className="text-[10px] text-gray-300 leading-relaxed">{eraDetail.summary}</p>
+                      )}
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
             )}
           </div>
