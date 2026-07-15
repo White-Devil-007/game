@@ -254,32 +254,6 @@ const simulateLocalEvolution = (morality,empathy,curiosity,greed,aggression,cust
   return { timeline:result.timeline, report:result.report, system_badges:result.badges };
 };
 
-const simulateLocalChat = (question,currentConfig,promptConfig) => {
-  const q=question.toLowerCase();
-  const {morality:m,empathy:e,curiosity:c,greed:g,aggression:a}=currentConfig;
-  const isPrompt=!!promptConfig&&promptConfig.trim().length>10;
-  const contextNote=isPrompt?`\n\nCivilization Profile:\n${promptConfig.substring(0,200).trim()}...`:'';
-  let responseText='';
-  if(q.includes('art')||q.includes('breakdown')){
-    responseText=m<20
-      ?`[ARCHON COGNITIVE ANALYSIS // ART METRICS]\n\nMorality Core at ${m}%.${contextNote}\n\nCreative expression has dissolved. The simulated race treats art as a parasitic cognitive waste vector. Traditional canvas formats were deleted in the 21st cycle, replaced by neurotransmitter stimulation grids optimizing dopamine for industrial throughput. Beauty is calculated in resource efficiency units only.`
-      :`[ARCHON COGNITIVE ANALYSIS // ART METRICS]\n\nEmpathy (${e}%) and Curiosity (${c}%) operating at elevated indices.${contextNote}\n\nArt has shifted into hyper-dimensional space. The populace broadcasts emotional matrices directly between neural implants. Art is not observed — it is felt as a shared conscious overlay. The physical canvas was abandoned in the early 22nd cycle.`;
-  }else if(q.includes('contract')||q.includes('law')){
-    responseText=g>60
-      ?`[ARCHON COGNITIVE ANALYSIS // LEGAL STRUCTURES]\n\nMaterial Greed at ${g}%.${contextNote}\n\nNational legislation has collapsed. Society operates on automated Smart Contracts running on local ledger grids. Rights are not constitutional — they are leased utility packages. Contract violations trigger automated drone lockouts or credit drain scripts. Justice is a transaction.`
-      :`[ARCHON COGNITIVE ANALYSIS // LEGAL STRUCTURES]\n\nLow Greed (${g}%) and high Empathy (${e}%).${contextNote}\n\nCoercion is mathematically unnecessary. Governance relies on organic social consensus matrices. Violations are handled by neural alignment sessions. The concept of punitive justice has been phased out entirely.`;
-  }else if(q.includes('space')||q.includes('predict')||q.includes('future')){
-    responseText=a>70
-      ?`[ARCHON COGNITIVE ANALYSIS // STELLAR PROJECTIONS]\n\nAggression index at ${a}%.${contextNote}\n\nStellar colonization will be militarized. Spacecraft are 87% kinetic shielding and payload launchers. Projections indicate terminal sector conflict over Jovian helium resources by cycle 2550, leading to planetary system quarantine.`
-      :c>75
-      ?`[ARCHON COGNITIVE ANALYSIS // STELLAR PROJECTIONS]\n\nCuriosity at ${c}%.${contextNote}\n\nThe race will bypass fusion rocketry within 50 cycles, shifting to quantum fold-drives. Kardashev Scale II expansion is highly probable by cycle 2400. Colonization of the asteroid ring is already underway.`
-      :`[ARCHON COGNITIVE ANALYSIS // STELLAR PROJECTIONS]\n\nModerate parameters detected.${contextNote}\n\nThe simulated race shows negligible stellar ambition. They remain locked to Earth\'s orbital cluster, slowly exhausting planetary reserves until a severe economic contraction forces system collapse.`;
-  }else{
-    responseText=`[ARCHON COGNITIVE ANALYSIS // SYSTEM INQUIRY]\n\nActive Parameters: Morality ${m}% | Empathy ${e}% | Curiosity ${c}% | Greed ${g}% | Aggression ${a}%.${contextNote}\n\nThe developmental vector of this sandbox has drifted significantly from Earth baselines. Interrogate the history core on: 'Art', 'Contracts', or 'Space Projections' for deep timeline decrypts.`;
-  }
-  return {response:responseText};
-};
-
 // ============================================================================
 // MAIN DASHBOARD
 // ============================================================================
@@ -304,6 +278,7 @@ export default function Dashboard() {
   const [selectedEraIndex, setSelectedEraIndex] = useState(0);
   const [eraDetail, setEraDetail] = useState({year:'2030 AD', title:'Origin of the Civilization', summary:'Move the era slider to generate a Gemini-powered history milestone based on the current civilization parameters.'});
   const [eraLoading, setEraLoading] = useState(false);
+  const [eraCache, setEraCache] = useState({});
   const eraCount = 4;
   const [report,   setReport]   = useState(defaultReport);
   const [badges,   setBadges]   = useState(defaultBadges);
@@ -321,9 +296,8 @@ export default function Dashboard() {
     const check=async()=>{
       try{
         const r=await fetch('http://localhost:8000/api/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({morality:0,empathy:0,curiosity:0,greed:0,aggression:0,custom_rules:[]})});
-        if(r.ok){setApiMode('GEMINI HYPER-CORE ACTIVE');setIsApiOnline(true);}
-        else{setApiMode('LOCAL SANDBOX ENGINE');setIsApiOnline(false);}
-      }catch{setApiMode('LOCAL SANDBOX ENGINE');setIsApiOnline(false);}
+        if(r.ok){setApiMode('GEMINI HYPER-CORE ACTIVE');setIsApiOnline(true);} else {setApiMode('GEMINI OFFLINE');setIsApiOnline(false);}
+      }catch{setApiMode('GEMINI OFFLINE');setIsApiOnline(false);}
     };
     check();
   },[]);
@@ -333,18 +307,26 @@ export default function Dashboard() {
   useEffect(()=>{
     const fetchEra = async () => {
       setEraLoading(true);
+      const payload = {
+        morality:+morality,
+        empathy:+empathy,
+        curiosity:+curiosity,
+        greed:+greed,
+        aggression:+aggression,
+        custom_rules: customRules,
+        prompt_config: inputMode==='prompt' ? promptConfig : '',
+        era_index: selectedEraIndex,
+        total_eras: eraCount
+      };
+      const cacheKey = JSON.stringify(payload);
+
+      if (eraCache[cacheKey]) {
+        setEraDetail(eraCache[cacheKey]);
+        setEraLoading(false);
+        return;
+      }
+
       try {
-        const payload = {
-          morality:+morality,
-          empathy:+empathy,
-          curiosity:+curiosity,
-          greed:+greed,
-          aggression:+aggression,
-          custom_rules: customRules,
-          prompt_config: inputMode==='prompt' ? promptConfig : '',
-          era_index: selectedEraIndex,
-          total_eras: eraCount
-        };
         const r = await fetch('http://localhost:8000/api/era', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
@@ -352,11 +334,13 @@ export default function Dashboard() {
         });
         if(!r.ok) throw new Error('Era generation failed');
         const d = await r.json();
-        setEraDetail({
+        const nextEraDetail = {
           year:d.year || eraDetail.year,
           title:d.title || eraDetail.title,
           summary:d.summary || eraDetail.summary
-        });
+        };
+        setEraCache(prev => ({ ...prev, [cacheKey]: nextEraDetail }));
+        setEraDetail(nextEraDetail);
       } catch {
         setEraDetail({
           year:'2030 AD',
@@ -397,11 +381,7 @@ export default function Dashboard() {
       setTimeline(d.timeline); setReport(d.report); setBadges(d.system_badges||['🛡️ Decrypted']);
       setChatHistory(p=>[...p,{sender:'System',text:`[SYSTEM] Simulation compiled. Mode: ${inputMode==='prompt'?'FREESTYLE PROMPT':'SLIDER CONFIG'}.`}]);
     }catch{
-      setTimeout(()=>{
-        const d=simulateLocalEvolution(morality,empathy,curiosity,greed,aggression,customRules,inputMode==='prompt'?promptConfig:'');
-        setTimeline(d.timeline);setReport(d.report);setBadges(d.system_badges);
-        setChatHistory(p=>[...p,{sender:'System',text:`[OFFLINE CORE] Procedural grid compiled. Mode: ${inputMode==='prompt'?'FREESTYLE PROMPT':'SLIDER CONFIG'}.`}]);
-      },3500);
+      setChatHistory(p=>[...p,{sender:'System',text:`[ERROR] Gemini simulation failed. Offline fallback disabled.`}]);
     }finally{setTimeout(()=>{clearInterval(iv);setIsLoading(false);},3700);}
   };
 
@@ -416,11 +396,8 @@ export default function Dashboard() {
       const d=await r.json();
       setChatHistory(p=>[...p,{sender:'Archon AI',text:d.response}]);
     }catch{
-      setTimeout(()=>{
-        const d=simulateLocalChat(txt,traitValues,inputMode==='prompt'?promptConfig:'');
-        setChatHistory(p=>[...p,{sender:'Archon AI',text:d.response}]);
-        setIsLoading(false);
-      },900);
+      setChatHistory(p=>[...p,{sender:'Archon AI',text:'[ERROR] Gemini chat failed. Offline fallback disabled.'}]);
+      setIsLoading(false);
       return;
     }
     setIsLoading(false);
@@ -594,7 +571,7 @@ export default function Dashboard() {
           </div>
 
           {/* Simulate Button */}
-          <button onClick={handleSimulate} disabled={isLoading||(inputMode==='prompt'&&!promptConfig.trim())}
+          <button onClick={handleSimulate} disabled={isLoading||!isApiOnline||(inputMode==='prompt'&&!promptConfig.trim())}
             className="w-full bg-gradient-to-r from-cyan-600 to-[#00D2FF] hover:from-cyan-500 hover:to-cyan-400 text-black font-black py-3 rounded tracking-widest text-sm shadow-[0_0_15px_rgba(0,210,255,0.4)] disabled:opacity-40 transition duration-300 flex items-center justify-center gap-2 group">
             {isLoading?<RefreshCw className="animate-spin w-4 h-4"/>:<Sparkles className="group-hover:scale-125 transition w-4 h-4"/>}
             SIMULATE EVOLUTIONARY ERA
@@ -817,7 +794,7 @@ export default function Dashboard() {
                 placeholder="Interrogate cosmic history core..."
                 className="w-full bg-black/60 border border-cyan-500/30 focus:border-cyan-400 rounded py-2 pl-6 pr-3 text-[11px] text-white placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-cyan-500"/>
             </div>
-            <button onClick={()=>handleChatSend()} disabled={isLoading||!chatInput.trim()}
+            <button onClick={()=>handleChatSend()} disabled={isLoading||!chatInput.trim() || !isApiOnline}
               className="bg-[#FFB800] hover:bg-amber-400 text-black p-2.5 rounded transition disabled:opacity-40">
               <Send className="w-4 h-4"/>
             </button>

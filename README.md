@@ -1,13 +1,12 @@
 ﻿# 🎮 Simulation Zero: The Cosmic Sandbox
 
-An AI-powered interactive universe simulator where you design civilizations by adjusting human behavioral traits and rules, then watch how different societies evolve across centuries. Powered by Google Gemini with procedural fallback generation.
+An AI-powered interactive universe simulator where you design civilizations by adjusting human behavioral traits and rules, then watch how different societies evolve across centuries. Powered by Google Gemini in Gemini-only mode.
 
 ## ✨ Features
 
 - **Interactive Trait Sliders** - Morality, Empathy, Curiosity, Greed, Aggression
 - **Five Distinct Archetypes** - Utopia, Warworld, Hivemind, Dreamers, Dystopia
 - **AI-Powered Narratives** - Google Gemini generates rich sci-fi worldbuilding
-- **Procedural Fallback** - Continues gameplay even without API keys
 - **Timeline Generation** - Watch your civilization evolve through 4+ eras
 - **Custom Rules** - Override defaults with your own societal directives
 - **Cyberpunk UI** - CRT scanline effects, glowing terminals, immersive aesthetic
@@ -247,9 +246,8 @@ netstat -ano | findstr :5173
 ```
 
 ### "No Gemini API keys found"
-- The server will work in PROCEDURAL FALLBACK mode (basic generation)
-- Add API keys to .env for advanced AI narratives
-- Restart server after adding keys
+- The server requires Gemini API keys and will return 503 responses without them.
+- Add API keys to .env and restart the backend.
 
 ### CORS/Network errors
 - Ensure backend is running on http://localhost:8000

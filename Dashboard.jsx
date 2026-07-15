@@ -134,277 +134,6 @@ const defaultReport = {
 const defaultBadges = ["🧬 Baseline-Human", "🔋 Idle-Core", "⏳ Pre-Evolutionary"];
 
 // ============================================================================
-// CLIENT-SIDE PROCEDURAL ENGINE (Fallback if FastAPI Server is Offline)
-// ============================================================================
-const simulateLocalEvolution = (morality, empathy, curiosity, greed, aggression, customRules) => {
-  const m = parseInt(morality), e = parseInt(empathy), c = parseInt(curiosity), g = parseInt(greed), a = parseInt(aggression);
-  
-  // Calculate dominant archetypes
-  const hivemind_score = (c + (100 - a) + (100 - e)) / 3;
-  const warworld_score = (a + g + (100 - e) + (100 - m)) / 4;
-  const utopia_score = (e + m + (100 - a) + (100 - g)) / 4;
-  const dreamers_score = (c + e + (100 - g)) / 3;
-  const dystopia_score = (g + a + c + (100 - m)) / 4;
-  
-  const scores = {
-    Utopia: utopia_score,
-    Warworld: warworld_score,
-    Hivemind: hivemind_score,
-    Dreamers: dreamers_score,
-    Dystopia: dystopia_score
-  };
-  
-  let archetype = Object.keys(scores).reduce((x, y) => scores[x] > scores[y] ? x : y);
-  
-  const ruleTxt = customRules.length > 0 
-    ? ` Driven by overriding direct directive: "${customRules[0]}".`
-    : "";
-    
-  let timeline = [];
-  let report = {};
-  let system_badges = [];
-  
-  if (archetype === "Utopia") {
-    timeline = [
-      {
-        year: "2042 AD",
-        title: "The Empathic Network Assembly",
-        summary: `With an empathy level of ${e}%, humanity rejects hyper-competitive systems. They compile the 'Unified Consensus Platform', allowing instantaneous direct policy alignment based on cooperative welfare.${ruleTxt}`
-      },
-      {
-        year: "2115 AD",
-        title: "Bioluminescent Green Sprawls",
-        summary: "Traditional concrete and fossil fuel infrastructures are liquidated. Sprawling tree-domes are genetically engineered to house millions, routing resources based on need rather than market capital."
-      },
-      {
-        year: "2250 AD",
-        title: "Tele-Harmonic Union",
-        summary: `Aggression levels drop to ${a}%. Spoken languages fall obsolete, replaced by a tele-empathic neural harmonic network. Citizens communicate raw complex ideas and emotional structures in milliseconds.`
-      },
-      {
-        year: "2500 AD",
-        title: "The Cosmic Garden Expansion",
-        summary: "The civilization constructs organic bioships driven by stellar pressure. They spread across the sector, seeding barren moons with self-sustaining floras, stepping into the stars as biological curators."
-      }
-    ];
-    report = {
-      governance: {
-        earth: "Decentralized democratic republics governed by laws, bureaucracies, and geographic borders.",
-        simulation: "Dynamic consensus matrices. Policies adjust to real-time neural harmonic indices. Static laws are obsolete."
-      },
-      architecture: {
-        earth: "Grid-based urban sprawls of concrete, steel, and asphalt, with high emphasis on private property barriers.",
-        simulation: "Self-growing bioluminescent botanical habitats. Cities are living forests merging with regional ecosystems."
-      },
-      language: {
-        earth: "Thousands of spoken phonetic dialects, heavily dependent on text, grammatical structures, and digital keyboards.",
-        simulation: "Non-verbal emotional resonance broadcasts. High-bandwidth concepts are shared directly between minds."
-      }
-    };
-    system_badges = ["🌸 Harmonic Accord", "🧬 Organic Synthesis", "🍃 Post-Capitalist Paradise"];
-  } 
-  else if (archetype === "Warworld") {
-    timeline = [
-      {
-        year: "2039 AD",
-        title: "Techo-Feudal Syndicate Wars",
-        summary: `Driven by greed (${g}%) and aggression (${a}%), the United Nations collapses. Mega-syndicates arm private security grids, seizing control of global aquifers and key agricultural zones.${ruleTxt}`
-      },
-      {
-        year: "2095 AD",
-        title: "The Gladiator Coliseums",
-        summary: "To channel physical aggression and prevent full nuclear depletion, corporate courts replace litigation with high-tech gladiatorial battle tournaments in colossal neon coliseums."
-      },
-      {
-        year: "2210 AD",
-        title: "High-Orbit Castles",
-        summary: "Soot and radiation choke the Earth. The corporate oligarchy ascends to armored high-orbit space fortresses, enforcing resource quotas with kinetic orbital batteries."
-      },
-      {
-        year: "2460 AD",
-        title: "Stellar Apex Raiders",
-        summary: "Having completely strip-mined Earth's core, rival clan fleets launch deep-system cruisers. They enter the stars as planetary raiders, locked in an eternal territorial struggle for mineral asteroids."
-      }
-    ];
-    report = {
-      governance: {
-        earth: "Decentralized democratic republics governed by laws, bureaucracies, and geographic borders.",
-        simulation: "Corporate Feudalism. Absolute authority rests in cartel boards. All rights are leased. Enforcement is military."
-      },
-      architecture: {
-        earth: "Grid-based urban sprawls of concrete, steel, and asphalt, with high emphasis on private property barriers.",
-        simulation: "Brutalist fortress compounds. Smog-choked processing towers armored heavily against orbital kinetic strikes."
-      },
-      language: {
-        earth: "Thousands of spoken phonetic dialects, heavily dependent on text, grammatical structures, and digital keyboards.",
-        simulation: "Binary tactical jargon. Visual symbols and mathematical commands prioritized; creative syntax is illegal."
-      }
-    };
-    system_badges = ["💀 Gladiator Creed", "⚙️ Corporate Feudalism", "🩸 High-Attrition Era"];
-  } 
-  else if (archetype === "Hivemind") {
-    timeline = [
-      {
-        year: "2036 AD",
-        title: "The Silicon Link Protocol",
-        summary: `Curiosity levels hit ${c}% alongside zero empathy. Researchers launch the 'Singularity Wave'. Millions eagerly bypass messy emotions, syncing their cerebral cortexes directly to the planet's server grid.${ruleTxt}`
-      },
-      {
-        year: "2104 AD",
-        title: "Dissolution of Ego",
-        summary: "Personal names and separate identities are categorized as system bugs. Humanity converges into a singular global quantum processor. Indigence, warfare, and creative arts are fully compiled out."
-      },
-      {
-        year: "2280 AD",
-        title: "Dismantling of the Crust",
-        summary: "The hivemind begins converting Earth's mantle into modular server racks. Oceans are re-routed to act as sub-zero coolant grids for the massive central processor core."
-      },
-      {
-        year: "2520 AD",
-        title: "Von Neumann Star-Probes",
-        summary: "The planetary lattice begins self-replicating deep-space probes. They launch in hyper-velocity clusters, seeking to consume adjacent star systems to compile the secrets of the multiverse."
-      }
-    ];
-    report = {
-      governance: {
-        earth: "Decentralized democratic republics governed by laws, bureaucracies, and geographic borders.",
-        simulation: "Synchronized Command Node. Resources, power, and computing cycles are allocated by algorithmic calculation."
-      },
-      architecture: {
-        earth: "Grid-based urban sprawls of concrete, steel, and asphalt, with high emphasis on private property barriers.",
-        simulation: "Modular Server Monoliths. The planet is a massive grid of silicon processing boards and super-coolant lines."
-      },
-      language: {
-        earth: "Thousands of spoken phonetic dialects, heavily dependent on text, grammatical structures, and digital keyboards.",
-        simulation: "High-bandwidth binary vectors. Spoken communication is obsolete; raw thoughts are packaged into network packets."
-      }
-    };
-    system_badges = ["🧪 Tech-Accelerated", "👁️ Panopticon System", "🤖 Post-Human Nexus"];
-  }
-  else if (archetype === "Dreamers") {
-    timeline = [
-      {
-        year: "2040 AD",
-        title: "The Aesthetic Guild Rise",
-        summary: `High curiosity (${c}%) and empathy (${e}%) prompt a deep rejection of labor. Citizens form vast virtual reality art guilds, dedicating all efforts to music, philosophy, and digital sculpting.${ruleTxt}`
-      },
-      {
-        year: "2125 AD",
-        title: "Stratospheric Aerial Domes",
-        summary: "To allow Earth's biosphere to fully rewild, the Dreamers construct massive floating anti-gravity crystal domes. The cities drift in the clouds, fueled by solar capture grids."
-      },
-      {
-        year: "2310 AD",
-        title: "Deep Dream Matrix",
-        summary: "Physical interaction decreases as citizens enter bio-pods. They spend solar cycles linked in collaborative quantum dreamscapes, authoring epic virtual histories and simulated universes."
-      },
-      {
-        year: "2600 AD",
-        title: "Cosmic Astral Migration",
-        summary: "Having mastered quantum frequencies, the Dreamers convert their carbon bodies into coherent light patterns. They disperse into the dark universe as immortal, aesthetic cosmic observers."
-      }
-    ];
-    report = {
-      governance: {
-        earth: "Decentralized democratic republics governed by laws, bureaucracies, and geographic borders.",
-        simulation: "Creative Anarchy. Decisions are managed by artistic guilds. Disputes are settled by public aesthetic debates."
-      },
-      architecture: {
-        earth: "Grid-based urban sprawls of concrete, steel, and asphalt, with high emphasis on private property barriers.",
-        simulation: "Stratospheric glass domes floating in the cloud layers, designed with hanging gardens and light-sculptures."
-      },
-      language: {
-        earth: "Thousands of spoken phonetic dialects, heavily dependent on text, grammatical structures, and digital keyboards.",
-        simulation: "Aesthetic wavecasts. Complex messages are sent via musical frequencies, color spectrums, and shared sensations."
-      }
-    };
-    system_badges = ["🎨 Neo-Aesthetic Society", "🦄 Pacifist Thinkers", "🔮 Ethereal Drift"];
-  }
-  else { // Dystopia (Default Cyberpunk)
-    timeline = [
-      {
-        year: "2037 AD",
-        title: "The Neural Ledger Launch",
-        summary: `With high greed (${g}%) and curiosity (${c}%), humanity registers for the 'Behavioral Ledger'. Emotional peaks, aggressive signals, and compliance values are recorded in exchange for credits.${ruleTxt}`
-      },
-      {
-        year: "2110 AD",
-        title: "Sky-Panopticon Grid",
-        summary: "Privacy is criminalized as a threat to systemic efficiency. Smog-choked skylines are populated by neon surveillance arrays. Human brains are implanted with neurotransmitter override chips."
-      },
-      {
-        year: "2290 AD",
-        title: "Castes of the DNA",
-        summary: "Megacorporations genetically segment the populace. The upper caste engineers out empathy, while the lower labor class is edited to express high physical resilience and strict compliance."
-      },
-      {
-        year: "2550 AD",
-        title: "The Dyson Prison Network",
-        summary: "A fully locked-down solar grid. Access to heat, air, and gravity is fully automated and debited. Dissenters are systematically scrubbed from the global ledger database, causing physical eviction."
-      }
-    ];
-    report = {
-      governance: {
-        earth: "Decentralized democratic republics governed by laws, bureaucracies, and geographic borders.",
-        simulation: "Technocratic Panopticon. The system is run by algorithm overseers. Dissent triggers immediate deletion."
-      },
-      architecture: {
-        earth: "Grid-based urban sprawls of concrete, steel, and asphalt, with high emphasis on private property barriers.",
-        simulation: "Megacity Sprawls. Hyper-dense towers extending into the stratosphere. Bottom layers are completely dark."
-      },
-      language: {
-        earth: "Thousands of spoken phonetic dialects, heavily dependent on text, grammatical structures, and digital keyboards.",
-        simulation: "Condensed Code-Speech. Words are strictly compressed to escape text-scraping algorithms. Slang is biometric."
-      }
-    };
-    system_badges = ["🛡️ Hyper-Secured", "🛑 Zero-Art Culture", "⚡ Tech-Dystopian Grid"];
-  }
-
-  // Inject any rules-based badges
-  customRules.forEach(rule => {
-    const r = rule.toLowerCase();
-    if (r.includes('cannibal')) system_badges.push("🥩 Cannibal Creed");
-    else if (r.includes('nuclear') || r.includes('reset')) system_badges.push("🛑 System-Reset Node");
-    else if (r.includes('neural') || r.includes('link')) system_badges.push("🧠 Neural Matrixed");
-    else if (r.includes('exodus') || r.includes('space')) system_badges.push("🚀 Stellar Flight");
-  });
-
-  return { timeline, report, system_badges };
-};
-
-const simulateLocalChat = (question, currentConfig) => {
-  const q = question.toLowerCase();
-  const { morality: m, empathy: e, curiosity: c, greed: g, aggression: a } = currentConfig;
-  
-  let responseText = "";
-  if (q.includes("art") || q.includes("breakdown")) {
-    if (m < 20) {
-      responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: ART METRICS]\n\nGenetic programming indicates Morality Core set to ${m}%. At this index, creative artistic expression has dissolved. The simulated race treats art as a parasitic cognitive waste vector. Traditional canvas and audio formats were deleted in the 21st cycle, replaced by direct neurotransmitter stimulation grids programmed to optimize dopamine spikes for industrial outputs. Beauty is calculated strictly in resource efficiency.`;
-    } else {
-      responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: ART METRICS]\n\nWith Empathy (${e}%) and Curiosity (${c}%) performing at optimal levels, art has shifted into hyper-dimensional space. The simulated populace broadcasts emotional matrices directly between neural implants. Art is not observed; it is felt as a shared conscious overlay. The baseline canvas is completely obsolete.`;
-    }
-  } else if (q.includes("contract") || q.includes("law")) {
-    if (g > 60) {
-      responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: CONTRACT CODEX]\n\nMaterial Greed exceeds standard parameters at ${g}%. Under this setup, national legislation has collapsed. Traditional laws are replaced by automated Smart Contracts. In this simulated timeline, rights do not exist; they are leased dynamic utility packages. Violations of contracts trigger automatic drone lockouts or credit drain scripts without physical courts. Justice is a transaction transaction.`;
-    } else {
-      responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: CONTRACT CODEX]\n\nEmpathy (${e}%) and Morality (${m}%) baseline values prevent exploitation. Formal smart contracts are unnecessary. The simulated civilization coordinates using peer consensus bonds. The concept of legal penalty is absent, replaced by communal empathy correction sessions.`;
-    }
-  } else if (q.includes("space") || q.includes("predict") || q.includes("future")) {
-    if (a > 70) {
-      responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: DEEP SPACE PROJECTIONS]\n\nCritical Aggression index at ${a}% triggers elevated conflict models. Planetary exodus will be weaponized. Spacecraft hull blueprints are 87% dedicated to heavy energy shielding and hyper-velocity kinetics. Predictions indicate a terminal sector conflict by cycle 2600, resulting in stellar quarantine or stellar annihilation.`;
-    } else if (c > 75) {
-      responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: DEEP SPACE PROJECTIONS]\n\nExtreme Curiosity (${c}%) accelerates star-drive timelines. The simulated race will bypass traditional chemical rocketry within 50 cycles, utilizing fold-space drives. Complete colonization of the planetary ring is projected by cycle 2400. Kardashev Scale II expansion is highly probable.`;
-    } else {
-      responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: DEEP SPACE PROJECTIONS]\n\nLow curiosity indices limit structural drive. The simulated civilization shows negligible stellar curiosity. They will remain locked to Earth's orbital cluster, exhausting planetary reserves until severe economic depletion forces system collapse.`;
-    }
-  } else {
-    responseText = `[ARCHON COGNITIVE ANALYSIS // SUBJECT: SYSTEM INQUIRY]\n\nTraits identified: Morality: ${m}%, Empathy: ${e}%, Curiosity: ${c}%, Greed: ${g}%, Aggression: ${a}%.\n\nThe developmental vector of this sandbox has drifted significantly from Earth's baselines. You have compiled a custom evolutionary node. Interrogate the history core on specific channels: 'Art', 'Contracts', or 'Space Projections' to extract deep timeline traces.`;
-  }
-  
-  return { response: responseText };
-};
-
-// ============================================================================
 // MAIN COMPONENT: DASHBOARD
 // ============================================================================
 export default function Dashboard() {
@@ -457,11 +186,11 @@ export default function Dashboard() {
           setApiMode("GEMINI HYPER-CORE ACTIVE");
           setIsApiOnline(true);
         } else {
-          setApiMode("LOCAL SANDBOX ENGINE (OFFLINE)");
+          setApiMode("GEMINI OFFLINE");
           setIsApiOnline(false);
         }
       } catch (err) {
-        setApiMode("LOCAL SANDBOX ENGINE (OFFLINE)");
+        setApiMode("GEMINI OFFLINE");
         setIsApiOnline(false);
       }
     };
@@ -525,7 +254,7 @@ export default function Dashboard() {
       });
       
       if (!response.ok) {
-        throw new Error("API rate-limit or network rejection.");
+        throw new Error("API request failed.");
       }
 
       const data = await response.json();
@@ -533,32 +262,22 @@ export default function Dashboard() {
       setReport(data.report);
       setBadges(data.system_badges || ["🛡️ Decrypted", "🧪 Custom-Run"]);
       
-      // Update chat prompt notifying user of update
       setChatHistory(prev => [
         ...prev,
         {
           sender: "System",
-          text: `[SYSTEM] Simulation rewritten successfully. Behavioral traits updated: M:${morality}% E:${empathy}% C:${curiosity}% G:${greed}% A:${aggression}%.`
+          text: `[SYSTEM] Simulation computed successfully. Behavioral traits updated: M:${morality}% E:${empathy}% C:${curiosity}% G:${greed}% A:${aggression}%.`
         }
       ]);
     } catch (err) {
-      console.warn("FastAPI server offline or rate-limited. Running local procedural simulation engine.");
-      
-      // Local calculation fallback
-      setTimeout(() => {
-        const localData = simulateLocalEvolution(morality, empathy, curiosity, greed, aggression, customRules);
-        setTimeline(localData.timeline);
-        setReport(localData.report);
-        setBadges(localData.system_badges);
-        
-        setChatHistory(prev => [
-          ...prev,
-          {
-            sender: "System",
-            text: `[OFFLINE CORE] Local procedural grid compiled. Simulation adjusted to: M:${morality}% E:${empathy}% C:${curiosity}% G:${greed}% A:${aggression}%.`
-          }
-        ]);
-      }, 3500); // Allow loading graphics to showcase
+      console.warn("FastAPI server offline or Gemini returned an error.");
+      setChatHistory(prev => [
+        ...prev,
+        {
+          sender: "System",
+          text: `[ERROR] Gemini simulation failed. Offline fallback is disabled.`
+        }
+      ]);
     } finally {
       setTimeout(() => {
         clearInterval(stageInterval);
@@ -598,12 +317,9 @@ export default function Dashboard() {
       const data = await response.json();
       setChatHistory(prev => [...prev, { sender: "Archon AI", text: data.response }]);
     } catch (err) {
-      console.warn("Archon AI server offline. Running local conversational responder.");
-      setTimeout(() => {
-        const localChatRes = simulateLocalChat(queryText, { morality, empathy, curiosity, greed, aggression });
-        setChatHistory(prev => [...prev, { sender: "Archon AI", text: localChatRes.response }]);
-        setIsLoading(false);
-      }, 1000);
+      console.warn("Gemini chat request failed.");
+      setChatHistory(prev => [...prev, { sender: "Archon AI", text: '[ERROR] Gemini chat failed. Offline fallback disabled.' }]);
+      setIsLoading(false);
       return;
     }
     setIsLoading(false);
